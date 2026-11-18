@@ -369,4 +369,19 @@ $("drop").ondrop=e=>{e.preventDefault();$("drop").classList.remove("over");load(
 $("gob").onclick=()=>{$("imp").scrollIntoView({behavior:"smooth"})};
 $("thm").onclick=()=>{const r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;r.dataset.theme=dark?"light":"dark"};
 render();
+/* โหลด .xlsx ทุกไฟล์จากโฟลเดอร์ xlsx/ อัตโนมัติเมื่อเปิดผ่าน GitHub Pages (หรือเว็บเซิร์ฟเวอร์ที่มี xlsx/index.json) */
+async function autoImport(){
+  let list=[];
+  try{const r=await fetch("xlsx/index.json",{cache:"no-store"});if(r.ok)list=(await r.json()).filter(n=>/\.xlsx?$/i.test(n)).map(n=>({name:n,url:"xlsx/"+encodeURIComponent(n)}))}catch(e){}
+  if(!list.length){const m=location.hostname.match(/^([^.]+)\.github\.io$/),p=location.pathname.split("/").filter(Boolean)[0];
+    if(m)try{const repo=p&&!/\.html?$/i.test(p)?p:m[1]+".github.io";const r=await fetch(`https://api.github.com/repos/${m[1]}/${repo}/contents/xlsx`);
+      if(r.ok)list=(await r.json()).filter(x=>x.type==="file"&&/\.xlsx?$/i.test(x.name)).map(x=>({name:x.name,url:x.download_url}))}catch(e){}}
+  if(!list.length)return;
+  const fs=[];
+  for(const x of list){try{const r=await fetch(x.url);if(r.ok){const b=await r.arrayBuffer();fs.push({name:x.name,arrayBuffer:async()=>b})}}catch(e){}}
+  if(!fs.length)return;
+  rows=[];offF.clear();await load(fs);
+  msg(`โหลดจากโฟลเดอร์ xlsx แล้ว ${fs.length} ไฟล์ · ลากไฟล์เพิ่มได้ หรือคลิกเพื่อเลือกไฟล์`);
+}
+autoImport();
 </script></body></html>
