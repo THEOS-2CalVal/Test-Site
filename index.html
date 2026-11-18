@@ -137,8 +137,8 @@ async function load(files){
 const short=s=>s.replace(/_/g," ");
 function render(){
   const files=[...new Set(rows.map(r=>r.file))];
-  const vis=withProj(rows.filter(r=>!offG.has(r.g)&&!offF.has(r.file)));
   if(!cur&&rows.length){const f=rows.slice().sort((a,b)=>a.key<b.key?-1:1)[0];cur={y:f.y,m:f.m}}
+  const vis=cur?withProj(rows.filter(r=>!offG.has(r.g)&&!offF.has(r.file))):[];
   $("stats").innerHTML=G.map(g=>`<div class="stat ${offG.has(g.k)?"off":""}" data-g="${g.k}" style="--c:var(${g.c})"><b>${rows.filter(r=>r.g===g.k&&!offF.has(r.file)).length}</b><span>${g.n}</span></div>`).join("");
   $("files").innerHTML=`<span class="lbl">ไฟล์:</span>`+files.map(f=>`<span class="chip ${offF.has(f)?"":"on"}" data-f="${f}">${short(f)} (${rows.filter(r=>r.file===f).length}) <b class="x" data-x="${f}" title="ลบไฟล์นี้">×</b></span>`).join("")+(files.length?`<span class="chip" data-xall="1">ลบทั้งหมด</span>`:"");
   {const sel=$("exf"),pv=sel.value;sel.innerHTML=`<option value="">ทุกพื้นที่</option>`+files.map(f=>`<option value="${f}">${short(f)}</option>`).join("");sel.value=files.includes(pv)?pv:""}
@@ -192,17 +192,19 @@ function summary(){
   $("sum").innerHTML=a+b;
 }
 let showP=true;
-function withProj(list){
-  if(!showP)return list;
+function withProj(list,y,m){
+  if(!showP||!cur&&!y)return list;
+  y=y||cur.y;m=m||cur.m;
+  const lo=Date.UTC(y,m-1,-7),hi=Date.UTC(y,m,8),step=CY()*864e5;
   const have=new Set(rows.map(r=>r.file+"|"+r.orbit+"|"+r.key)),seen=new Set(),out=[...list];
-  list.forEach(b=>{for(let k=-1;k<=6;k++){if(!k)continue;
-    const dt=new Date(Date.UTC(b.y,b.m-1,b.d+k*CY()));
-    const y=dt.getUTCFullYear(),m=dt.getUTCMonth()+1,d=dt.getUTCDate(),key=`${y}-${p2(m)}-${p2(d)}`,id=b.file+"|"+b.orbit+"|"+key;
-    if(have.has(id)||seen.has(id))continue;seen.add(id);
-    out.push({...b,y,m,d,key,cloud:null})}});
+  list.forEach(b=>{const t0=Date.UTC(b.y,b.m-1,b.d);
+    for(let k=Math.max(-1,Math.ceil((lo-t0)/step));k<=Math.floor((hi-t0)/step);k++){if(!k)continue;
+      const dt=new Date(t0+k*step),yy=dt.getUTCFullYear(),mm=dt.getUTCMonth()+1,d=dt.getUTCDate(),key=`${yy}-${p2(mm)}-${p2(d)}`,id=b.file+"|"+b.orbit+"|"+key;
+      if(have.has(id)||seen.has(id))continue;seen.add(id);
+      out.push({...b,y:yy,m:mm,d,key,cloud:null})}});
   return out;
 }
-const monthP=(y,m)=>withProj(rows.filter(r=>!offG.has(r.g)&&!offF.has(r.file))).filter(r=>r.y===y&&r.m===m).sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:a.time<b.time?-1:1);
+const monthP=(y,m)=>withProj(rows.filter(r=>!offG.has(r.g)&&!offF.has(r.file)),y,m).filter(r=>r.y===y&&r.m===m).sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:a.time<b.time?-1:1);
 function daily(){
   const rs=monthP(cur.y,cur.m);
   $("dayttl").textContent=`สรุปรายวัน · ${MN[cur.m-1]} ${cur.y}`;
@@ -230,7 +232,10 @@ if(window.claude&&claude.use)claude.use("downloads").then(d=>{DL=d}).catch(()=>{
 const GC=[["2E8B2E","DFF2DA"],["E07B00","FDEBD0"],["0F3C62","DCE8F4"],["7A8396","E8EBF1"]];
 const exRows=(y,m,f)=>monthRows(y,m).filter(r=>!f||r.file===f);
 const exMat=(y,m,f)=>monthP(y,m).filter(r=>!f||r.file===f);
-const exMonths=all=>all?[...new Set(rows.map(r=>r.y*100+r.m))].sort():[cur.y*100+cur.m];
+const exMonths=all=>{if(!all)return[cur.y*100+cur.m];
+  const ks=rows.map(r=>r.y*100+r.m).sort(),a=ks[0],z=ks[ks.length-1],out=[];
+  for(let y=Math.floor(a/100),m=a%100,n=0;y*100+m<=z+(showP?100:0)&&n<60;n++){out.push(y*100+m);if(++m>12){m=1;y++}}
+  return out};
 const cycX=r=>showP?cycTxt(r):"";
 const fname=(f,all,ext)=>`offnadir_${f?short(f).replace(/ /g,"_")+"_":""}${all?"all_months":cur.y+"-"+p2(cur.m)}.${ext}`;
 async function saveFile(fn,blob){
