@@ -63,8 +63,6 @@ table.t{width:100%;border-collapse:collapse;font-size:13px}
 .mx td.c{min-width:56px;vertical-align:middle}.mx .pill{display:block;margin:2px 0;padding:1px 4px}
 .mx .sk{position:sticky;left:0;z-index:1;background:var(--card);text-align:left;min-width:140px;border-left:0;border-right:1px solid var(--bd)}
 .mx th.sk{background:var(--bg)}
-.ev.pj{background:transparent;border:1px dashed var(--c);border-left:3px dashed var(--c)}
-.pill.pj{background:transparent;border:1px dashed var(--c)}
 .opt{display:inline-flex;gap:6px;align-items:center}
 .sumhead select{padding:7px 8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit}
 .brand{display:flex;align-items:center;gap:14px}.logo{height:58px;width:auto;background:#fff;border-radius:10px;padding:4px 10px;border:1px solid var(--bd)}
@@ -87,7 +85,7 @@ table.t{width:100%;border-collapse:collapse;font-size:13px}
 <details class="fold"><summary><h2 id="dayttl">สรุปรายวัน</h2></summary><div id="dayt"></div></details>
 <details class="fold"><summary><h2 id="sumttl">สรุปประจำเดือน</h2></summary><div id="sum"></div></details>
 <div class="sumhead"><h2>ส่งออกรายงาน</h2><div><label class="cyc">รอบซ้ำ <input id="cyc" type="number" min="1" value="26"> วัน</label><select id="exs" title="ช่วงเวลา"><option value="m">เดือนนี้</option><option value="a">ทุกเดือน</option></select><select id="exf" title="พื้นที่"></select><button class="btn" id="exx">⬇ Excel</button><button class="btn pri" id="exp">⬇ PDF</button></div></div>
-<p class="note">เกณฑ์การจัดกลุ่ม: ปัดค่า Off-nadir เป็นจำนวนเต็มก่อน → น้อยกว่า 10 (≤10), 11–20, 21–30 · ค่าที่เกิน 30 แสดงเป็น "อื่น ๆ" · เวลาแสดงตามคอลัมน์ Local Time</p>
+<p class="note">เกณฑ์การจัดกลุ่ม: ปัดค่า Off-nadir เป็นจำนวนเต็มก่อน → น้อยกว่า 10 (≤10), 11–20, 21–30 · ค่าที่เกิน 30 แสดงเป็น "อื่น ๆ" · เวลาแสดงตามคอลัมน์ Local Time · รอบซ้ำนับเป็นข้อมูลจริง · อัปเดต 18/11/2026</p>
 <section class="imp" id="imp"><div class="sumhead"><h2>นำเข้าไฟล์</h2><button class="btn pri" id="pick">＋ นำเข้า xlsx</button></div>
 <input type="file" id="fi" accept=".xlsx,.xls" multiple hidden>
 <div class="drop" id="drop">ลากไฟล์ .xlsx (หลายไฟล์ได้) มาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์</div>
@@ -158,7 +156,7 @@ function render(){
     const ev=vis.filter(r=>r.key===k).sort((a,b)=>a.time<b.time?-1:1);
     const out=d.getMonth()!==cur.m-1;
     h+=`<div class="day ${out?"out":""} ${k===tk?"today":""}" ${ev.length?`data-d="${k}"`:""}><div class="dn">${d.getDate()}</div>`+
-    ev.slice(0,4).map(e=>{const g=G[e.g-1];return `<div class="ev ${e.proj?"pj":""}" data-d="${k}" style="--c:var(${g.c});--cb:var(${g.b})"><b>${e.off.toFixed(1)}°</b> ${e.time} · ${short(e.file)}</div>`}).join("")+
+    ev.slice(0,4).map(e=>{const g=G[e.g-1];return `<div class="ev" data-d="${k}" style="--c:var(${g.c});--cb:var(${g.b})"><b>${e.off.toFixed(1)}°</b> ${e.time} · ${short(e.file)}</div>`}).join("")+
     (ev.length>4?`<div class="more">+${ev.length-4} รายการ</div>`:"")+`</div>`;
   }
   $("grid").innerHTML=h;summary();report();daily();
@@ -167,7 +165,7 @@ function detail(k){
   const ev=withProj(rows.filter(r=>!offG.has(r.g)&&!offF.has(r.file))).filter(r=>r.key===k).sort((a,b)=>a.time<b.time?-1:1);
   const [y,m,d]=k.split("-").map(Number);
   $("bx").innerHTML=`<h3>${d} ${MN[m-1]} ${y}</h3>`+ev.map(e=>{const g=G[e.g-1];
-   return `<div class="item" style="--c:var(${g.c});--cb:var(${g.b})"><b>${short(e.file)}</b> · ${e.city}${e.proj?` <span class="pill pj" style="--c:var(--g2)">คาดการณ์จาก ${e.src}</span>`:""}<div class="row"><span>Local Time</span><span>${e.time}</span></div><div class="row"><span>Off-nadir</span><span>${e.off.toFixed(2)}° (${g.n})</span></div><div class="row"><span>Orbit</span><span>${e.orbit}</span></div>${rep(e)}${e.cloud!=null?`<div class="row"><span>Cloud forecast</span><span>${e.cloud}%</span></div>`:""}</div>`}).join("")+`<button class="btn" onclick="$('md').classList.remove('show')">ปิด</button>`;
+   return `<div class="item" style="--c:var(${g.c});--cb:var(${g.b})"><b>${short(e.file)}</b> · ${e.city}<div class="row"><span>Local Time</span><span>${e.time}</span></div><div class="row"><span>Off-nadir</span><span>${e.off.toFixed(2)}° (${g.n})</span></div><div class="row"><span>Orbit</span><span>${e.orbit}</span></div>${rep(e)}${e.cloud!=null?`<div class="row"><span>Cloud forecast</span><span>${e.cloud}%</span></div>`:""}</div>`}).join("")+`<button class="btn" onclick="$('md').classList.remove('show')">ปิด</button>`;
   $("md").classList.add("show");
 }
 const CY=()=>+$("cyc").value||26;
@@ -182,7 +180,7 @@ const cycTxt=e=>{
   return out.map(o=>(dayN(o.x)>dayN(e)?"→ ":"← ")+fmtD(o.x)+"").join(", ")
 };
 const repTxt=(e,p)=>p.map(x=>(dayN(x)>dayN(e)?"→ ":"← ")+fmtD(x)).join(", ");
-const rep=e=>{if(!showP)return "";const t=e.proj?repTxt(e,partner(e)):cycTxt(e);return t?`<div class="row"><span>รอบซ้ำ ${CY()} วัน</span><span style="text-align:right">${t}</span></div>`:""};
+const rep=e=>{if(!showP)return "";const t=cycTxt(e);return t?`<div class="row"><span>รอบซ้ำ ${CY()} วัน</span><span style="text-align:right">${t}</span></div>`:""};
 const monthRows=(y,m)=>monthP(y,m);
 function summary(){
   const rs=monthRows(cur.y,cur.m);
@@ -211,7 +209,7 @@ function daily(){
   if(!rs.length){$("dayt").innerHTML="";return}
   const ds=[...new Set(rs.map(r=>r.d))].sort((a,b)=>a-b);
   $("dayt").innerHTML=`<div class="tw"><table class="t"><tr><th>วันที่</th><th>จำนวน</th><th>พื้นที่ถ่าย · มุม Off-nadir</th></tr>`+ds.map(d=>{const x=rs.filter(r=>r.d===d),w=DW[new Date(cur.y,cur.m-1,d).getDay()];
-    return `<tr><td><b>${d} ${MN[cur.m-1]}</b> <small>(${w})</small></td><td>${x.filter(r=>!r.proj).length}</td><td style="white-space:normal">`+x.map(r=>{const g=G[r.g-1];return `<span class="pill ${r.proj?"pj":""}" style="--c:var(${g.c});--cb:var(${g.b});margin:2px 4px 2px 0" title="${r.proj?"คาดการณ์ซ้ำจาก "+r.src+" · ":""}Orbit ${r.orbit}">${short(r.file)} · ${r.off.toFixed(1)}°</span>`}).join("")+`</td></tr>`}).join("")+`</table></div>`;
+    return `<tr><td><b>${d} ${MN[cur.m-1]}</b> <small>(${w})</small></td><td>${x.length}</td><td style="white-space:normal">`+x.map(r=>{const g=G[r.g-1];return `<span class="pill" style="--c:var(${g.c});--cb:var(${g.b});margin:2px 4px 2px 0" title="Orbit ${r.orbit}">${short(r.file)} · ${r.off.toFixed(1)}°</span>`}).join("")+`</td></tr>`}).join("")+`</table></div>`;
 }
 function report(){
   const rs=monthP(cur.y,cur.m);
@@ -223,8 +221,8 @@ function report(){
   h+=`<th>รวม</th></tr>`;
   ar.forEach(f=>{const x=rs.filter(r=>r.file===f);
     h+=`<tr><td class="sk"><b>${short(f)}</b><br><small>${x[0].city}</small></td>`;
-    for(let d=1;d<=n;d++){h+=`<td class="c">`+x.filter(r=>r.d===d).map(r=>{const g=G[r.g-1];return `<span class="pill ${r.proj?"pj":""}" style="--c:var(${g.c});--cb:var(${g.b})" title="${r.proj?"คาดการณ์ซ้ำจาก "+r.src+" · ":""}${r.time} · Orbit ${r.orbit}">${r.off.toFixed(1)}°</span>`}).join("")+`</td>`}
-    h+=`<td class="c"><b>${x.filter(r=>!r.proj).length}</b></td></tr>`});
+    for(let d=1;d<=n;d++){h+=`<td class="c">`+x.filter(r=>r.d===d).map(r=>{const g=G[r.g-1];return `<span class="pill" style="--c:var(${g.c});--cb:var(${g.b})" title="${r.time} · Orbit ${r.orbit}">${r.off.toFixed(1)}°</span>`}).join("")+`</td>`}
+    h+=`<td class="c"><b>${x.length}</b></td></tr>`});
   $("rep").innerHTML=h+`</table></div>`;
 }
 let DL=null;
@@ -282,11 +280,10 @@ async function buildXlsx(ks,f){
     const hr=put(ws,4,hv,{head:1,h:32});for(let d=1;d<=n;d++){const w=new Date(y,m-1,d).getDay();if(w%6===0)hr.getCell(d+1).fill=fl("F08A00")}
     ar.forEach((a,i)=>{const x=mp.filter(r=>r.file===a),row=[short(a)];
       for(let d=1;d<=n;d++)row.push(x.filter(r=>r.d===d).map(r=>r.off.toFixed(1)).join(" / "));
-      row.push(x.filter(r=>!r.proj).length);
+      row.push(x.length);
       const r=put(ws,5+i,row,{left:[0]});r.height=Math.max(24,16*Math.max(1,...Array.from({length:n},(_,j)=>x.filter(q=>q.d===j+1).length)));r.getCell(1).font=fo({bold:true});
       for(let d=1;d<=n;d++){const q=x.filter(r=>r.d===d);if(!q.length)continue;const g=GC[q[0].g-1],c=r.getCell(d+1);
-        if(q[0].proj){c.font=fo({italic:true,color:{argb:"FF"+g[0]}});const dl={style:"dashed",color:{argb:"FF"+g[0]}};c.border={top:dl,left:dl,bottom:dl,right:dl}}
-        else{c.fill=fl(g[1]);c.font=fo({bold:true,color:{argb:"FF"+g[0]}})}}});
+        c.fill=fl(g[1]);c.font=fo({bold:true,color:{argb:"FF"+g[0]}})}});
     ws.views=[{showGridLines:false,state:"frozen",xSplit:1,ySplit:4}];
   });
   if(!wb.worksheets.length)throw new Error("ไม่มีข้อมูล");
@@ -297,7 +294,7 @@ async function buildXlsx(ks,f){
 const LOGO=document.querySelector(".logo").src;
 function pdfBlocks(ks,f){
   const out=[],S=f?short(f):"ทุกพื้นที่";
-  const pill=(r,t)=>{const g=GC[r.g-1];return `<span style="display:inline-block;padding:1px 9px;border-radius:99px;font-weight:600;font-size:11.5px;margin:1px 2px;${r.proj?`border:1px dashed #${g[0]};color:#${g[0]};background:#fff`:`background:#${g[1]};color:#${g[0]}`}">${t}</span>`};
+  const pill=(r,t)=>{const g=GC[r.g-1];return `<span style="display:inline-block;padding:1px 9px;border-radius:99px;font-weight:600;font-size:11.5px;margin:1px 2px;background:#${g[1]};color:#${g[0]}">${t}</span>`};
   const TH=a=>`<th style="background:#0F3C62;color:#fff;padding:7px 9px;font-weight:600;text-align:${a||"left"};white-space:nowrap">`;
   const TD=(i,x)=>`<td style="padding:6px 9px;border-bottom:1px solid #E3E7F0;${i%2?"background:#F4F6FB;":""}${x||""}">`;
   const H3=t=>`<div style="font-size:15px;font-weight:700;margin:14px 0 8px;color:#0F3C62;border-left:4px solid #3AA935;padding-left:8px">${t}</div>`;
@@ -315,8 +312,8 @@ function pdfBlocks(ks,f){
     for(let d=1;d<=n;d++){const w=new Date(y,m-1,d).getDay();h+=`<th style="background:${w%6===0?"#F08A00":"#0F3C62"};color:#fff;padding:3px 0;font-weight:600">${d}<br><span style="font-weight:400;font-size:8.5px">${DW[w]}</span></th>`}
     h+=`<th style="width:36px;background:#0F3C62;color:#fff">รวม</th></tr>`;
     ar.forEach((a,i)=>{const x=mp.filter(r=>r.file===a);h+=`<tr><td style="padding:5px;border-bottom:1px solid #E3E7F0;font-weight:700;font-size:11px">${short(a)}</td>`;
-      for(let d=1;d<=n;d++)h+=`<td style="border-bottom:1px solid #E3E7F0;border-left:1px solid #EEF1F6;text-align:center;padding:2px 0">`+x.filter(r=>r.d===d).map(r=>{const g=GC[r.g-1];return `<div style="margin:1px 1px;border-radius:5px;padding:1px 0;font-weight:600;${r.proj?`border:1px dashed #${g[0]};color:#${g[0]}`:`background:#${g[1]};color:#${g[0]}`}">${r.off.toFixed(1)}</div>`}).join("")+`</td>`;
-      h+=`<td style="text-align:center;font-weight:700;border-bottom:1px solid #E3E7F0">${x.filter(r=>!r.proj).length}</td></tr>`});
+      for(let d=1;d<=n;d++)h+=`<td style="border-bottom:1px solid #E3E7F0;border-left:1px solid #EEF1F6;text-align:center;padding:2px 0">`+x.filter(r=>r.d===d).map(r=>{const g=GC[r.g-1];return `<div style="margin:1px 1px;border-radius:5px;padding:1px 0;font-weight:600;background:#${g[1]};color:#${g[0]}">${r.off.toFixed(1)}</div>`}).join("")+`</td>`;
+      h+=`<td style="text-align:center;font-weight:700;border-bottom:1px solid #E3E7F0">${x.length}</td></tr>`});
     out.push(h+"</table>");
     for(let c=0;c<rs.length;c+=14){
       const part=rs.slice(c,c+14);
